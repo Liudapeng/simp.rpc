@@ -23,14 +23,14 @@ namespace Server
             ConfigHelper.SetConsoleLogger();
             ISerializer serializer = new ProtoBufSerializer();
             var bossGroup = new MultithreadEventLoopGroup(1);
-            var workerGroup = new MultithreadEventLoopGroup(100); 
+            var workerGroup = new MultithreadEventLoopGroup(); 
             try
             {
                 var bootstrap = new ServerBootstrap();
                 bootstrap
                     .Group(bossGroup, workerGroup)
                     .Channel<TcpServerSocketChannel>()
-                    .Option(ChannelOption.SoBacklog, 1000)
+                    .Option(ChannelOption.SoBacklog, 100)
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline; 
