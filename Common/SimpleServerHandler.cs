@@ -13,7 +13,7 @@
     {
         public SimpleServerHandler()
         {
-            Console.WriteLine("create");
+            //Console.WriteLine("create");
         }
 
         protected override void ChannelRead0(IChannelHandlerContext context, SimpleRequestMessage message)
@@ -22,7 +22,7 @@
             Task.Delay(100).Wait();
             if (message != null)
             {
-               // Console.WriteLine("Received from client: " + JsonConvert.SerializeObject(message));
+                Console.WriteLine($"theaterId:{Thread.CurrentThread.ManagedThreadId},Received from client: " + JsonConvert.SerializeObject(message));
 
                 context.WriteAndFlushAsync(new SimpleResponseMessage { MessageID = message.MessageID });
             }
