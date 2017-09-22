@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata;
+using System.Threading;
 using Common.Address;
 
 namespace Common
@@ -36,6 +37,7 @@ namespace Common
         {
             Bootstrap = new Bootstrap()
                 .Channel<TcpSocketChannel>()
+                .Option(ChannelOption.ConnectTimeout, new TimeSpan(0, 0, 0, 0, clientOptions.ConnectTimeout))
                 .Option(ChannelOption.TcpNodelay, true)
                 .Group(new MultithreadEventLoopGroup());
 
@@ -55,48 +57,40 @@ namespace Common
 
         public string State => $"ClientChannelPool: GroupPool size:{this.EndPointGroupPools.Count}, pool size:{this.EndPointGroupPools.Values.Sum(v => v.Count)}, GroupQueue size:{this.EndPointGroupQueues.Count}, queue size:{this.EndPointGroupQueues.Values.Sum(v => v.Count)}";
 
-        public IChannel Acquire(Func<EndPoint> endPointProvider)
-        {
+        public async Task<IChannel> Acquire(Func<EndPoint> endPointProvider)
+        { 
             var endPoint = endPointProvider();
             IChannel channel;
             do
             {
-                try
+                ConcurrentQueue<IChannel> queue;
+                if (!this.EndPointGroupQueues.TryGetValue(endPoint, out queue) || queue == null || queue.IsEmpty)
                 {
-                    ConcurrentQueue<IChannel> queue;
-                    if (!this.EndPointGroupQueues.TryGetValue(endPoint, out queue) || queue == null || queue.IsEmpty)
-                    {
-                        channel = this.New(endPoint);
-                        if (channel == null || !channel.Active)
-                            throw new ChannelException(string.Format("channel connectAsync error! remoteAddress:{0}", endPoint.ToString()));
+                    channel = await this.New(endPoint);
+                    if (channel == null || !channel.Active)
+                        throw new ChannelException(string.Format("channel connectAsync error! remoteAddress:{0}", endPoint.ToString()));
 
-                        ConcurrentDictionary<string, IChannel> pool;
-                        if (!this.EndPointGroupPools.TryGetValue(endPoint, out pool))
-                        {
-                            pool = new ConcurrentDictionary<string, IChannel>();
-                            if (this.EndPointGroupPools.TryAdd(endPoint, pool))
-                            {
-                                pool.TryAdd(GetChannelId(channel), channel);
-                            }
-                        }
-                        else
+                    ConcurrentDictionary<string, IChannel> pool;
+                    if (!this.EndPointGroupPools.TryGetValue(endPoint, out pool))
+                    {
+                        pool = new ConcurrentDictionary<string, IChannel>();
+                        if (this.EndPointGroupPools.TryAdd(endPoint, pool))
                         {
                             pool.TryAdd(GetChannelId(channel), channel);
                         }
                     }
-                    else if (!queue.TryDequeue(out channel))
+                    else
                     {
-                        break;
+                        pool.TryAdd(GetChannelId(channel), channel);
                     }
-
-                    if (channel.Active)
-                        break;
                 }
-                catch (OperationCanceledException)
+                else if (!queue.TryDequeue(out channel))
                 {
-                    //TODO 
-                    throw;
+                    break;
                 }
+
+                if (channel.Active)
+                    break;
             } while (true);
 
 #if DEBUG
@@ -142,15 +136,16 @@ namespace Common
             return false;
         }
 
-        private IChannel New(EndPoint endPoint)
+        private async Task<IChannel> New(EndPoint endPoint)
         {
             ConcurrentDictionary<string, IChannel> pool;
             if (EndPointGroupPools.TryGetValue(endPoint, out pool) && pool.Count >= clientOptions.MaxConnections)
                 throw new Exception("pool is full");
 
-            IChannel channel = Bootstrap.ConnectAsync(endPoint).Result;
-            channel.GetAttribute(AttributeKey<ClientChannelPool>.ValueOf(typeof(ClientChannelPool).Name)).Set(this);
-            return channel;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            IChannel channle = await Bootstrap.ConnectAsync(endPoint);
+            channle.GetAttribute(AttributeKey<ClientChannelPool>.ValueOf(typeof(ClientChannelPool).Name)).Set(this);
+            return channle;
         }
 
         private string GetChannelId(IChannel channel)

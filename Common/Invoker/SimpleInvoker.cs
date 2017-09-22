@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Codec;
 using Common.Invoker;
@@ -15,16 +16,17 @@ namespace Common.Invoker
 {
     public class SimpleInvoker : Invoker<SimpleResponseMessage>
     {
-        //private static readonly ConcurrentDictionary<ServerDescription, ClientChannelPool> clientChannelPoolMap = new ConcurrentDictionary<ServerDescription, ClientChannelPool>(new ServerDescriptionComparer());
         private readonly ConcurrentDictionary<string, TaskCompletionSource<SimpleResponseMessage>> invokeResult = new ConcurrentDictionary<string, TaskCompletionSource<SimpleResponseMessage>>();
 
         private ClientChannelPool currentClientChannelPool;
+        private ServerDescription server;
 
         private static readonly string clientName;
         private readonly string serverName;
         private readonly string group;
 
         private readonly IServerRouteManager serverRouteManager;
+        private readonly IAddressProvider addressProvider;
         private readonly ISerializer serializer = new ProtoBufSerializer();
 
         static SimpleInvoker()
@@ -32,9 +34,10 @@ namespace Common.Invoker
             clientName = "SimpleInvoker";
         }
 
-        public SimpleInvoker(IServerRouteManager serverRouteManager, string serverName, string group = "")
+        public SimpleInvoker(IServerRouteManager serverRouteManager,IAddressProvider addressProvider, string serverName, string group = "")
         {
             this.serverRouteManager = serverRouteManager;
+            this.addressProvider = addressProvider;
             this.serverName = serverName;
             this.group = group;
 
@@ -43,7 +46,7 @@ namespace Common.Invoker
 
         private void InitChannel()
         {
-            ServerDescription server = this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group).Result;
+            server = this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group).Result;
             currentClientChannelPool = new ClientChannelPool(
                     () => new IChannelHandler[]
                     {
@@ -52,20 +55,7 @@ namespace Common.Invoker
                         new SimpleClientHandler(this)
                     },
                     server.ClientOptions
-                );
-            //if (!clientChannelPoolMap.TryGetValue(server, out currentClientChannelPool))
-            //{
-            //    currentClientChannelPool = new ClientChannelPool(
-            //        () => new IChannelHandler[]
-            //        {
-            //            new SimpleEncoder<SimpleRequestMessage>(serializer),
-            //            new SimpleDecoder<SimpleResponseMessage>(serializer),
-            //            new SimpleClientHandler(this)
-            //        },
-            //        server.ClientOptions
-            //    );
-            //    clientChannelPoolMap.TryAdd(server, currentClientChannelPool);
-            //}
+                ); 
         }
 
         private SimpleRequestMessage CreateRequestMessage(string service, string method, List<object> args)
@@ -92,19 +82,45 @@ namespace Common.Invoker
          
         public async Task<SimpleResponseMessage> InvokeAsync(string service, string method, List<object> args)
         {
-            AddressBase address = this.serverRouteManager.GetAddressAsync(serverName, group).Result;
+            AddressBase address = await this.addressProvider.Acquire(this.server.AddressList); 
             if (address == null)
                 throw new Exception("address not found");
 
-            IChannel clientChannel = currentClientChannelPool.Acquire(address.CreateEndPoint);
+            Task<IChannel> clientChannelTask = currentClientChannelPool.Acquire(address.CreateEndPoint);
 
             var requestMessage = CreateRequestMessage(service, method, args);
+
+            IChannel clientChannel = await clientChannelTask;
             requestMessage.ContextID = clientChannel.Id.AsShortText();
 
-            var tcs = new TaskCompletionSource<SimpleResponseMessage>();
+            //响应结果接收task
+            var tcs = new TaskCompletionSource<SimpleResponseMessage>(); 
             invokeResult.TryAdd(requestMessage.MessageID, tcs);
-            clientChannel.WriteAndFlushAsync(requestMessage); 
-            return await tcs.Task ; 
+
+            clientChannel.WriteAndFlushAsync(requestMessage);
+
+            //请求超时
+            //var cts_request = new CancellationTokenSource();
+            //Task requestTask = clientChannel.WriteAndFlushAsync(requestMessage); 
+            //if (!requestTask.Wait(server.ClientOptions.WriteTimeout, cts_request.Token))
+            //{
+            //    invokeResult.TryRemove(requestMessage.ContextID, out TaskCompletionSource<SimpleResponseMessage> _);
+            //    cts_request.Cancel();
+            //    throw new Exception("request timeout: MessageId: {requestMessage.MessageID}");
+            //}
+
+            //响应超时
+            var cts_response = new CancellationTokenSource();
+            if (!tcs.Task.Wait(server.ClientOptions.ReadTimeout, cts_response.Token))
+            {
+                invokeResult.TryRemove(requestMessage.MessageID, out TaskCompletionSource<SimpleResponseMessage> _);
+                cts_response.Cancel();
+                throw new Exception($"response timeout: MessageId: {requestMessage.MessageID}");
+            }
+
+            var result = tcs.Task.Result; 
+            invokeResult.TryRemove(requestMessage.MessageID, out TaskCompletionSource<SimpleResponseMessage> _);
+            return result;
         }
 
 
@@ -112,7 +128,7 @@ namespace Common.Invoker
         {
             TaskCompletionSource<SimpleResponseMessage> tcs;
             if (!invokeResult.TryGetValue(msg.MessageID, out tcs)) 
-                throw new Exception("获取上下文失败"); 
+                throw new Exception("find request context error"); 
 
             tcs.SetResult(msg);
             return tcs.Task;

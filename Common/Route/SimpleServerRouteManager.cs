@@ -24,12 +24,12 @@ namespace Common.Route
             {
                 Name = "Server1",
                 Balance = "polling",
-                AddressList = new Queue<AddressBase>(new List<AddressBase>
+                AddressList = new List<AddressBase>(new List<AddressBase>
                 {
                     new IPPortAddress {Ip = "127.0.0.1", Port = 8007}
-                }),
+                }).AsEnumerable(),
                 ClientOptions = new ClientOptions()
-            });
+            }).Wait();
         }
         public Task<IEnumerable<ServerDescription>> GetRoutesAsync()
         {
@@ -56,30 +56,7 @@ namespace Common.Route
         {
             throw new NotImplementedException();
         }
-
-        public Task<AddressBase> GetAddressAsync(string serverName, string group = "")
-        {
-            return Task.Run(() =>
-            {
-                ServerDescription route = ServerRouteList.Find(server => server.Group == group && server.Name == serverName);
-
-                if (route == null)
-                    throw new Exception("route not found");
-
-                if (route.Balance == "polling")
-                {
-                    var addressList = route.AddressList as Queue<AddressBase>;
-                    if (addressList != null)
-                    {
-                        var address = addressList.Dequeue();
-                        addressList.Enqueue(address);
-                        return address;
-                    }
-                }
-                throw new Exception("address not found");
-            });
-        }
-
+         
         public Task<ServerDescription> GetServerRouteAsync(string serverName, string @group = "")
         {
             return Task.Run(() =>

@@ -9,8 +9,8 @@ namespace Common
         private bool reuseAddress;
         private int connectTimeout = 10 * 1000;
         private int acquireTimeout = 10 * 1000;
-        private int readTimeout = 30 * 1000;
-        private int writeTimeout = 30 * 1000;
+        private int readTimeout = 5 * 1000;
+        private int writeTimeout = 5 * 1000;
         private int maxConnections = 500;
         private int maxPendingAcquires = 100;
         private int receiveBufferSize = 1024 * 64;

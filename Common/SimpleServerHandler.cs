@@ -10,12 +10,19 @@
     using Newtonsoft.Json;
 
     public class SimpleServerHandler : SimpleChannelInboundHandler<SimpleRequestMessage>
-    { 
+    {
+        public SimpleServerHandler()
+        {
+            Console.WriteLine("create");
+        }
+
         protected override void ChannelRead0(IChannelHandlerContext context, SimpleRequestMessage message)
-        { 
+        {
+            Console.WriteLine($"theaterId:{Thread.CurrentThread.ManagedThreadId}");
+            Task.Delay(100).Wait();
             if (message != null)
             {
-                Console.WriteLine("Received from client: " + JsonConvert.SerializeObject(message));
+               // Console.WriteLine("Received from client: " + JsonConvert.SerializeObject(message));
 
                 context.WriteAndFlushAsync(new SimpleResponseMessage { MessageID = message.MessageID });
             }

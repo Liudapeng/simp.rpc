@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Common.Address;
 using Common.Route;
 
 namespace Common.Invoker
@@ -8,6 +9,7 @@ namespace Common.Invoker
     {
         private static readonly ConcurrentDictionary<ServerDescription, Invoker<SimpleResponseMessage>> invokerMap = new ConcurrentDictionary<ServerDescription, Invoker<SimpleResponseMessage>>(new ServerDescriptionComparer());
         private static readonly IServerRouteManager serverRouteManager = new SimpleServerRouteManager();
+        private readonly IAddressProvider addressProvider = new PollingAddressProvider(); 
 
         public Invoker<SimpleResponseMessage> CreateInvoker(string serverName, string @group = "")
         {
@@ -18,7 +20,7 @@ namespace Common.Invoker
             Invoker<SimpleResponseMessage> invoker;
             if (!invokerMap.TryGetValue(server, out invoker))
             {
-                invoker = new SimpleInvoker(serverRouteManager, serverName, group);
+                invoker = new SimpleInvoker(serverRouteManager, addressProvider, serverName, group);
                 invokerMap.TryAdd(server, invoker);
             }
 
