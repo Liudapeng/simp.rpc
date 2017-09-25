@@ -11,7 +11,7 @@ namespace Common.Address
         private readonly object _lock = new object();
         private int currentIndex;
 
-        public Task<AddressBase> Acquire(IEnumerable<AddressBase> addressCollection)
+        public Task<AddressBase> AcquireAsync(IEnumerable<AddressBase> addressCollection)
         {
             return Task.Run(() =>
             {

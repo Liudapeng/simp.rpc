@@ -1,10 +1,12 @@
-﻿using System.Net; 
+﻿using System.Net;
+using ProtoBuf;
 
 namespace Common.Address 
-{
+{ 
     public class IPPortAddress : AddressBase
-    {
+    { 
         private EndPoint endPoint;
+         
         public string Ip { get; set; }
 
         public int Port { get; set; }

@@ -13,6 +13,7 @@ using Common.Invoker;
 using DotNetty.Transport.Channels;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Newtonsoft.Json;
+using ProtoBuf;
 
 namespace Client
 {
@@ -28,11 +29,11 @@ namespace Client
                 try
                 {
                     Task[] tasks = new Task[10];
-                    for (int j = 0; j < 10; j++)
+                    for (int j = 0; j < 1; j++)
                     {
                         tasks[j] = Task.Run(async () =>
                         {
-                            var response = invokerFactory.CreateInvoker("Server1").InvokeAsync("service", "method", new List<object> { 1, 2, 3, "123" });
+                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("service", "method", new List<object> { 1, 2, 3, "123" ,new RequestParamTest()});
 
                             Console.WriteLine($"do other things : {Thread.CurrentThread.ManagedThreadId}");
 
@@ -40,6 +41,7 @@ namespace Client
 
                             Console.WriteLine("all done");
                         });
+
                         tasks[j].ContinueWith(task =>
                         {
                             if (task.IsFaulted)
@@ -69,5 +71,12 @@ namespace Client
             Console.ReadLine();
         }
 
+    }
+
+    [ProtoContract]
+    public class RequestParamTest
+    {
+        [ProtoMember(1)]
+        public string Name = "RequestParamTest"; 
     }
 }

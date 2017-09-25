@@ -41,12 +41,12 @@ namespace Common.Invoker
             this.serverName = serverName;
             this.group = group;
 
-            InitChannel();
+           Task.Run(async () => { await InitChannel(); }).Wait();
         }
 
-        private void InitChannel()
+        private async Task InitChannel()
         {
-            server = this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group).Result;
+            server = await this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group);
             currentClientChannelPool = new ClientChannelPool(
                     () => new IChannelHandler[]
                     {
@@ -82,11 +82,11 @@ namespace Common.Invoker
          
         public async Task<SimpleResponseMessage> InvokeAsync(string service, string method, List<object> args)
         {
-            AddressBase address = await this.addressProvider.Acquire(this.server.AddressList); 
+            AddressBase address = await this.addressProvider.AcquireAsync(this.server.AddressList); 
             if (address == null)
                 throw new Exception("address not found");
 
-            Task<IChannel> clientChannelTask = currentClientChannelPool.Acquire(address.CreateEndPoint);
+            Task<IChannel> clientChannelTask = currentClientChannelPool.AcquireAsync(address.CreateEndPoint);
 
             var requestMessage = CreateRequestMessage(service, method, args);
 
@@ -118,7 +118,7 @@ namespace Common.Invoker
                 throw new Exception($"response timeout: MessageId: {requestMessage.MessageID}");
             }
 
-            var result = tcs.Task.Result; 
+            var result = await tcs.Task; 
             invokeResult.TryRemove(requestMessage.MessageID, out TaskCompletionSource<SimpleResponseMessage> _);
             return result;
         }

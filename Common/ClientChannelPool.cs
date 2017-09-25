@@ -57,7 +57,7 @@ namespace Common
 
         public string State => $"ClientChannelPool: GroupPool size:{this.EndPointGroupPools.Count}, pool size:{this.EndPointGroupPools.Values.Sum(v => v.Count)}, GroupQueue size:{this.EndPointGroupQueues.Count}, queue size:{this.EndPointGroupQueues.Values.Sum(v => v.Count)}";
 
-        public async Task<IChannel> Acquire(Func<EndPoint> endPointProvider)
+        public async Task<IChannel> AcquireAsync(Func<EndPoint> endPointProvider)
         { 
             var endPoint = endPointProvider();
             IChannel channel;
@@ -66,7 +66,7 @@ namespace Common
                 ConcurrentQueue<IChannel> queue;
                 if (!this.EndPointGroupQueues.TryGetValue(endPoint, out queue) || queue == null || queue.IsEmpty)
                 {
-                    channel = await this.New(endPoint);
+                    channel = await this.NewAsync(endPoint);
                     if (channel == null || !channel.Active)
                         throw new ChannelException(string.Format("channel connectAsync error! remoteAddress:{0}", endPoint.ToString()));
 
@@ -136,7 +136,7 @@ namespace Common
             return false;
         }
 
-        private async Task<IChannel> New(EndPoint endPoint)
+        private async Task<IChannel> NewAsync(EndPoint endPoint)
         {
             ConcurrentDictionary<string, IChannel> pool;
             if (EndPointGroupPools.TryGetValue(endPoint, out pool) && pool.Count >= clientOptions.MaxConnections)

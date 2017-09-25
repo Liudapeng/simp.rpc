@@ -5,6 +5,6 @@ namespace Common.Address
 {
     public interface IAddressProvider
     {
-        Task<AddressBase> Acquire(IEnumerable<AddressBase> addressCollection);
+        Task<AddressBase> AcquireAsync(IEnumerable<AddressBase> addressCollection);
     }
 }

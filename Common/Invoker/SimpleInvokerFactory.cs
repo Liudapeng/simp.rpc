@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Common.Address;
 using Common.Route;
 
@@ -11,9 +12,9 @@ namespace Common.Invoker
         private static readonly IServerRouteManager serverRouteManager = new SimpleServerRouteManager();
         private readonly IAddressProvider addressProvider = new PollingAddressProvider(); 
 
-        public Invoker<SimpleResponseMessage> CreateInvoker(string serverName, string @group = "")
+        public async Task<Invoker<SimpleResponseMessage>> CreateInvokerAsync(string serverName, string @group = "")
         {
-            var server = serverRouteManager.GetServerRouteAsync(serverName, @group).Result;
+            var server =await serverRouteManager.GetServerRouteAsync(serverName, @group);
             if (server == null)
                 throw new Exception("serverroute not found");
 
