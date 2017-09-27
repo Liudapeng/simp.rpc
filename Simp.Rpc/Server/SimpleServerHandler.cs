@@ -25,7 +25,7 @@ namespace Simp.Rpc.Server
         protected override void ChannelRead0(IChannelHandlerContext context, SimpleRequestMessage message)
         {
             Console.WriteLine($"threadId:{Thread.CurrentThread.ManagedThreadId}");
-            Task.Delay(100).Wait();
+            //Task.Delay(100).Wait();
             if (message != null)
             {
                 var executer = this.server.rpcServiceContainer.FindExecuter("TestRpcService", "ExecuteService");

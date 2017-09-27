@@ -5,11 +5,11 @@ namespace Server
 {
     public class TestRpcBizService : ITestRpcService
     {
-        public TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2)
+        public TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2, int i)
         {
             return new TestServiceResponse
             {
-                FloatValue = request.FloatValue+ request2.FloatValue,
+                FloatValue = request.FloatValue + request2.FloatValue + i,
                 IntValue = request.IntValue + request2.IntValue,
                 StringValue = request.StringValue + request2.StringValue
             };
@@ -24,6 +24,6 @@ namespace Server
         {
             return 1;
         }
-         
+
     }
 }

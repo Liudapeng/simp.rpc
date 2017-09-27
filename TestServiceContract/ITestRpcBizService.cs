@@ -8,7 +8,7 @@ namespace TestServiceContract
         [RpcServiceContract]
         int GetServiceCount();
          
-        TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2);
+        TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2,int i);
 
         [RpcServiceIgnore]
         int TestIgnore();

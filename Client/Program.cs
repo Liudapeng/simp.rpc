@@ -26,7 +26,7 @@ namespace Client
                     {
                         tasks[j] = Task.Run(async () =>
                         {
-                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("TestRpcService", "ExecuteService", new List<object> {new TestServiceRequest(),new TestServiceRequest2()});
+                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("TestRpcService", "ExecuteService", new List<object> {new TestServiceRequest(),new TestServiceRequest2(),1});
 
                             Console.WriteLine($"do other things : {Thread.CurrentThread.ManagedThreadId}");
 
