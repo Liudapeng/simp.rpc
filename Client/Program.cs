@@ -1,19 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
+using System.Collections.Generic; 
 using System.Threading;
-using System.Threading.Tasks;
-using Common.Address;
-using Common.Route;
-using Common;
-using Common.Codec;
-using Common.Invoker;
-using DotNetty.Transport.Channels;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using System.Threading.Tasks; 
+using Simp.Rpc.Invoker; 
 using Newtonsoft.Json;
 using ProtoBuf;
+using Simp.Rpc;
+using TestServiceContract;
 
 namespace Client
 {
@@ -33,7 +26,7 @@ namespace Client
                     {
                         tasks[j] = Task.Run(async () =>
                         {
-                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("service", "method", new List<object> { 1, 2, 3, "123" ,new RequestParamTest()});
+                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("TestRpcService", "ExecuteService", new List<object> {new TestServiceRequest(),new TestServiceRequest2()});
 
                             Console.WriteLine($"do other things : {Thread.CurrentThread.ManagedThreadId}");
 

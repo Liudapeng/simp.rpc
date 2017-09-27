@@ -1,58 +1,40 @@
-﻿ 
-using Common.Codec;
+﻿
+using System.Collections.Generic;
+using System.Net;
+using System.Reflection;
+using Client;
+using Microsoft.Extensions.DependencyInjection;
+using Simp.Rpc.Server;
+using Simp.Rpc.Service;
+using TestServiceContract;
 
 namespace Server
 {
     using System;
-    using System.IO;
-    using System.Security.Cryptography.X509Certificates;
-    using System.Text;
     using System.Threading.Tasks;
-    using DotNetty.Codecs;
-    using DotNetty.Handlers.Logging;
-    using DotNetty.Handlers.Tls;
-    using DotNetty.Transport.Bootstrapping;
-    using DotNetty.Transport.Channels;
-    using DotNetty.Transport.Channels.Sockets;
-    using Common;
 
     class Program
     {
-        static async Task RunServerAsync()
+        static void Main()
         {
-            ConfigHelper.SetConsoleLogger();
-            ISerializer serializer = new ProtoBufSerializer();
-            var bossGroup = new MultithreadEventLoopGroup(1);
-            var workerGroup = new MultithreadEventLoopGroup(); 
-            try
+            Task.Run(async () =>
             {
-                var bootstrap = new ServerBootstrap();
-                bootstrap
-                    .Group(bossGroup, workerGroup)
-                    .Channel<TcpServerSocketChannel>()
-                    .Option(ChannelOption.SoBacklog, 100)
-                    .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
-                    {
-                        IChannelPipeline pipeline = channel.Pipeline; 
-                        pipeline.AddLast("enc", new SimpleEncoder<SimpleResponseMessage>(serializer));
-                        pipeline.AddLast("dec", new SimpleDecoder<SimpleRequestMessage>(serializer)); 
-                        pipeline.AddLast("handle", new SimpleServerHandler());
-                    }));
+                Assembly.Load("TestServiceContract");
 
-                IChannel boundChannel = await bootstrap.BindAsync(ServerSettings.Port);
+                IServiceCollection serviceDICollection = new ServiceCollection();
 
-                Console.ReadLine();
+                IDictionary<string, RpcServiceInfo> rpcServices = await new AttributeRpcServiceProvider(serviceDICollection).ScanRpcServices();
 
-                await boundChannel.CloseAsync();
-            }
-            finally
-            {
-                await Task.WhenAll(
-                    bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
-                    workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
-            }
+                IServiceProvider serviceProvider = serviceDICollection.BuildServiceProvider();
+
+                RpcServiceContainer rpcServiceContainer = new RpcServiceContainer(serviceProvider).BuildRpcServices(rpcServices);
+ 
+                IServer server = new SimpleServer(rpcServiceContainer, new ServerOptions { EndPoint = new IPEndPoint(ServerSettings.Host, ServerSettings.Port) });
+                await server.StartAsync();
+
+                Console.WriteLine($"服务端启动成功，{DateTime.Now}。");
+            });
+            Console.ReadLine();
         }
-
-        static void Main() => RunServerAsync().Wait();
     }
 }
