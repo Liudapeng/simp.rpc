@@ -15,21 +15,19 @@ namespace Server
 
     class Program
     {
+        private static readonly Assembly[] assembly = { Assembly.Load("TestServiceContract"), Assembly.Load("Server") }; 
+        private static readonly IServiceCollection serviceDICollection = new ServiceCollection();
+
         static void Main()
         {
             Task.Run(async () =>
             {
-                Assembly.Load("TestServiceContract");
+                IRpcServiceProvider rpcServiceProvider = new AttributeRpcServiceProvider(assembly);
+                 
+                IRpcServiceContainer rpcServiceContainer = new SimpleRpcServiceContainer(rpcServiceProvider);
 
-                IServiceCollection serviceDICollection = new ServiceCollection();
-
-                IDictionary<string, RpcServiceInfo> rpcServices = await new AttributeRpcServiceProvider(serviceDICollection).ScanRpcServices();
-
-                IServiceProvider serviceProvider = serviceDICollection.BuildServiceProvider();
-
-                RpcServiceContainer rpcServiceContainer = new RpcServiceContainer(serviceProvider).BuildRpcServices(rpcServices);
- 
                 IServer server = new SimpleServer(rpcServiceContainer, new ServerOptions { EndPoint = new IPEndPoint(ServerSettings.Host, ServerSettings.Port) });
+
                 await server.StartAsync();
 
                 Console.WriteLine($"服务端启动成功，{DateTime.Now}。");

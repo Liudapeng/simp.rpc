@@ -1,4 +1,5 @@
-﻿using Simp.Rpc.Service.Attributes;
+﻿using System.Collections.Generic;
+using Simp.Rpc.Service.Attributes;
 using TestServiceContract;
 
 namespace Server
@@ -13,6 +14,11 @@ namespace Server
                 IntValue = request.IntValue + request2.IntValue,
                 StringValue = request.StringValue + request2.StringValue
             };
+        }
+
+        public void Execute(List<TestServiceRequest> request, TestServiceRequest2 request2)
+        {
+             
         }
 
         public int TestIgnore()

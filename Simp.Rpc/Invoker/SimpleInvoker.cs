@@ -71,8 +71,7 @@ namespace Simp.Rpc.Invoker
             {
                 requestMessage.Parameters = args.Select(arg =>
                 {
-                    int codeType = 0;
-                    var simpleParameter = new SimpleParameter { Value = BodyCodec.EnCode(arg, out codeType), ValueType = codeType };
+                    var simpleParameter = new SimpleParameter { Value = SimpleCodec.EnCode(arg, out int codeType), ValueType = codeType };
                     return simpleParameter;
                 }).ToArray();
             }

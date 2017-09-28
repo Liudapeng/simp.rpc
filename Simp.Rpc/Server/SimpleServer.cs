@@ -13,11 +13,11 @@ namespace Simp.Rpc.Server
 {
     public class SimpleServer : IServer
     {
-        public readonly RpcServiceContainer rpcServiceContainer;
+        public readonly IRpcServiceContainer rpcServiceContainer;
         private readonly ServerOptions serverOptions;
         private IChannel boundChannel;
 
-        public SimpleServer(RpcServiceContainer rpcServiceContainer, ServerOptions serverOptions)
+        public SimpleServer(IRpcServiceContainer rpcServiceContainer, ServerOptions serverOptions)
         {
             this.serverOptions = serverOptions;
             this.rpcServiceContainer = rpcServiceContainer;

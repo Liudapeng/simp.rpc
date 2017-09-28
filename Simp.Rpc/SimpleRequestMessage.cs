@@ -32,14 +32,4 @@ namespace Simp.Rpc
         public SimpleParameter[] Parameters { get; set; }
     }
 
-    [ProtoContract]
-    public class SimpleParameter
-    {
-        [ProtoMember(1)]
-        public int ValueType { get; set; }
-
-        [ProtoMember(2)]
-        public byte[] Value { get; set; }
-         
-    } 
 }

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks; 
-using Simp.Rpc.Invoker; 
+using System.Threading.Tasks;
+using Simp.Rpc.Invoker;
 using Newtonsoft.Json;
 using ProtoBuf;
 using Simp.Rpc;
+using Simp.Rpc.Codec;
 using TestServiceContract;
 
 namespace Client
@@ -22,17 +23,15 @@ namespace Client
                 try
                 {
                     Task[] tasks = new Task[10];
-                    for (int j = 0; j < 1; j++)
+                    for (int j = 0; j < 5; j++)
                     {
                         tasks[j] = Task.Run(async () =>
                         {
-                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("TestRpcService", "ExecuteService", new List<object> {new TestServiceRequest(),new TestServiceRequest2(),1});
+                            var response = (await invokerFactory.CreateInvokerAsync("Server1")).InvokeAsync("TestRpcService", "ExecuteService", new List<object> { new TestServiceRequest(), new TestServiceRequest2(), 10000 });
+                             
+                            var res = await response;
 
-                            Console.WriteLine($"do other things : {Thread.CurrentThread.ManagedThreadId}");
-
-                            Console.WriteLine("response:" + JsonConvert.SerializeObject(await response));
-
-                            Console.WriteLine("all done");
+                            Console.WriteLine("response:" + JsonConvert.SerializeObject(SimpleCodec.DeCode(res.Result.Value, res.Result.ValueType, typeof(TestServiceResponse)))); 
                         });
 
                         tasks[j].ContinueWith(task =>
@@ -70,6 +69,6 @@ namespace Client
     public class RequestParamTest
     {
         [ProtoMember(1)]
-        public string Name = "RequestParamTest"; 
+        public string Name = "RequestParamTest";
     }
 }

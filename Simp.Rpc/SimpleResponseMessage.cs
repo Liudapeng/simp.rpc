@@ -27,5 +27,9 @@ namespace Simp.Rpc
 
         [ProtoMember(7)]
         public string ContextID { get; set; }
+
+        [ProtoMember(8)]
+        public SimpleParameter Result { get; set; }
     }
+      
 }

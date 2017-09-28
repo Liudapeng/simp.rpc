@@ -1,4 +1,5 @@
-﻿using Simp.Rpc.Service.Attributes;
+﻿using System.Collections.Generic;
+using Simp.Rpc.Service.Attributes;
 
 namespace TestServiceContract
 {
@@ -8,7 +9,9 @@ namespace TestServiceContract
         [RpcServiceContract]
         int GetServiceCount();
          
-        TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2,int i);
+        TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2, int i);
+
+        void Execute(List<TestServiceRequest> request, TestServiceRequest2 request2);
 
         [RpcServiceIgnore]
         int TestIgnore();

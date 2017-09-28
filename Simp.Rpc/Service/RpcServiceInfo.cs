@@ -11,10 +11,10 @@ namespace Simp.Rpc.Service
 
         public Type ServiceType { get; set; }
 
+        public Type ImplServiceType { get; set; }
+
         public bool IsImpl { get; set; }
-
-        public object Instance { get; set; }
-
+          
         public Dictionary<string, RpcMethodInfo> Methods { get; set; }
 
         public override string ToString()
