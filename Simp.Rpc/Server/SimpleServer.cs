@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using Common;
+using DotNetty.Common.Internal.Logging;
 using Simp.Rpc.Client;
 using Simp.Rpc.Codec;
 using DotNetty.Transport.Bootstrapping;

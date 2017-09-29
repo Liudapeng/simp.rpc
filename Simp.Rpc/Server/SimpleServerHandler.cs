@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using DotNetty.Common.Internal.Logging;
+using Microsoft.Extensions.Logging;
 using Simp.Rpc.Codec;
 using Simp.Rpc.Service;
 
@@ -16,7 +18,9 @@ namespace Simp.Rpc.Server
 
     public class SimpleServerHandler : SimpleChannelInboundHandler<SimpleRequestMessage>
     {
+        private readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<SimpleServerHandler>();
         private readonly SimpleServer server;
+
         public SimpleServerHandler(IServer server)
         {
             this.server = server as SimpleServer;
@@ -51,12 +55,12 @@ namespace Simp.Rpc.Server
 
                 simpleResponseMessage.Result = new SimpleParameter { Value = SimpleCodec.EnCode(execRes, out int typeCode), ValueType = typeCode };
                 string pre = $"threadId:{Thread.CurrentThread.ManagedThreadId}{context.Channel.Id.AsShortText()}";
-                var log = $"{Environment.NewLine}{pre}, Received from client: ";
+                var log = $"{pre}, Received from client: ";
                 log += $"{Environment.NewLine}{pre}, service: {message.ServiceName}";
                 log += $"{Environment.NewLine}{pre}, method: {message.MethodName}";
                 log += $"{Environment.NewLine}{pre}, params:{JsonConvert.SerializeObject(args)}";
-                log += $"{Environment.NewLine}{pre}, Result: {JsonConvert.SerializeObject(execRes)}";
-                Console.WriteLine(log);
+                log += $"{Environment.NewLine}{pre}, Result: {JsonConvert.SerializeObject(execRes)}{Environment.NewLine}";
+                Logger.Debug(log);
                 context.WriteAndFlushAsync(simpleResponseMessage);
             }
         }
@@ -70,7 +74,7 @@ namespace Simp.Rpc.Server
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            Console.WriteLine("closed exception: " + context.Channel.Id);
+            Logger.Error("closed exception: " + context.Channel.RemoteAddress);
             context.CloseAsync();
         }
 

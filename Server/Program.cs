@@ -42,7 +42,7 @@ namespace Server
             {
                 serviceProvider.GetRequiredService<ILoggerFactory>().AddConsole((s, level) => true, true);
 
-                InternalLoggerFactory.DefaultFactory.AddConsole((s, level) => false, true);
+                InternalLoggerFactory.DefaultFactory.AddConsole((s, level) => true, true);
 
                 await serviceProvider.GetRequiredService<IServer>().StartAsync(); 
 
