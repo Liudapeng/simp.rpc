@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
-using Client;
+using DotNetty.Common.Internal.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Simp.Rpc.Server;
 using Simp.Rpc.Service;
+using Simp.Rpc.Util;
 using TestServiceContract;
 
 namespace Server
@@ -15,22 +18,37 @@ namespace Server
 
     class Program
     {
-        private static readonly Assembly[] assembly = { Assembly.Load("TestServiceContract"), Assembly.Load("Server") }; 
-        private static readonly IServiceCollection serviceDICollection = new ServiceCollection();
+        private static readonly Assembly[] assembly =
+        {
+            Assembly.Load("TestServiceContract"),//服务
+            Assembly.Load("Server")//实现
+        };
+         
 
         static void Main()
         {
+            Assembly.Load("TestServiceContract");//服务
+
+            ServiceCollection serviceCollection = new ServiceCollection();
+            IServiceProvider serviceProvider = serviceCollection
+                .AddLogging()
+                .AddSingleton<IServer, SimpleServer>()
+                .AddSingleton<IRpcServiceProvider, AttributeRpcServiceProvider>()
+                .AddSingleton<IRpcServiceContainer, SimpleRpcServiceContainer>()
+                .AddSingleton<IServerOptionProvider, SimpleServerOptionProvider>()
+                .BuildServiceProvider();
+             
             Task.Run(async () =>
             {
-                IRpcServiceProvider rpcServiceProvider = new AttributeRpcServiceProvider(assembly);
-                 
-                IRpcServiceContainer rpcServiceContainer = new SimpleRpcServiceContainer(rpcServiceProvider);
+                serviceProvider.GetRequiredService<ILoggerFactory>().AddConsole((s, level) => true, true);
 
-                IServer server = new SimpleServer(rpcServiceContainer, new ServerOptions { EndPoint = new IPEndPoint(ServerSettings.Host, ServerSettings.Port) });
+                InternalLoggerFactory.DefaultFactory.AddConsole((s, level) => false, true);
 
-                await server.StartAsync();
+                await serviceProvider.GetRequiredService<IServer>().StartAsync(); 
 
-                Console.WriteLine($"服务端启动成功，{DateTime.Now}。");
+                serviceProvider.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Main")
+                    .LogInformation($"服务端启动成功，{DateTime.Now}。");
             });
             Console.ReadLine();
         }

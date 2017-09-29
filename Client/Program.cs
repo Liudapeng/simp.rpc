@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using ProtoBuf;
 using Simp.Rpc;
 using Simp.Rpc.Codec;
+using Simp.Rpc.Util;
 using TestServiceContract;
 
 namespace Client
@@ -15,15 +16,15 @@ namespace Client
     {
         private static void RunClientAsync()
         {
-            ConfigHelper.SetConsoleLogger();
+           
             var invokerFactory = new SimpleInvokerFactory();
 
             do
             {
                 try
                 {
-                    Task[] tasks = new Task[10];
-                    for (int j = 0; j < 5; j++)
+                    Task[] tasks = new Task[5];
+                    for (int j = 0; j < tasks.Length; j++)
                     {
                         tasks[j] = Task.Run(async () =>
                         {

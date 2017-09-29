@@ -7,20 +7,25 @@ using Simp.Rpc.Codec;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
+using Microsoft.Extensions.Logging;
 using Simp.Rpc.Service;
+using Simp.Rpc.Util;
 
 namespace Simp.Rpc.Server
 {
     public class SimpleServer : IServer
     {
-        public readonly IRpcServiceContainer rpcServiceContainer;
+        private readonly ILogger<SimpleServer> logger;
+
+        public IRpcServiceContainer RpcServiceContainer { get; }
         private readonly ServerOptions serverOptions;
         private IChannel boundChannel;
 
-        public SimpleServer(IRpcServiceContainer rpcServiceContainer, ServerOptions serverOptions)
+        public SimpleServer(IRpcServiceContainer rpcServiceContainer, IServerOptionProvider serverOptionProvider, ILogger<SimpleServer> logger)
         {
-            this.serverOptions = serverOptions;
-            this.rpcServiceContainer = rpcServiceContainer;
+            this.logger = logger;
+            this.serverOptions = serverOptionProvider.GetOption();
+            this.RpcServiceContainer = rpcServiceContainer;
         }
 
         public async Task StartAsync()
@@ -29,15 +34,14 @@ namespace Simp.Rpc.Server
         }
 
         async Task RunServerAsync(EndPoint endPoint)
-        {
-            ConfigHelper.SetConsoleLogger();
+        { 
             ISerializer serializer = new ProtoBufSerializer();
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
-             
+
             var bootstrap = new ServerBootstrap();
             bootstrap
-                .Group(bossGroup, workerGroup) 
+                .Group(bossGroup, workerGroup)
                 .Channel<TcpServerSocketChannel>()
                 .Option(ChannelOption.SoBacklog, 100)
                 .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
@@ -49,7 +53,7 @@ namespace Simp.Rpc.Server
                 }));
 
             boundChannel = await bootstrap.BindAsync(endPoint);
-            Console.WriteLine($"Server Start by {boundChannel.LocalAddress},{boundChannel.Id}");
+            logger.LogInformation($"server start by netty with {boundChannel.LocalAddress}, channelId:{boundChannel.Id}");
         }
 
     }

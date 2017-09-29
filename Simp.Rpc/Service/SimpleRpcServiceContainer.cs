@@ -1,26 +1,34 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ProtoBuf.Meta;
 
 namespace Simp.Rpc.Service
 {
     public class SimpleRpcServiceContainer : IRpcServiceContainer
     {
-        private IDictionary<string, RpcServiceInfo> _rpcServiceTable;
-        private readonly IRpcServiceProvider _rpcServiceProvider;
-        private IServiceProvider serviceProvider;
+        private readonly ILogger<SimpleRpcServiceContainer> logger;
 
-        public SimpleRpcServiceContainer(IRpcServiceProvider rpcServiceProvider)
+        private readonly IDictionary<string, ServiceExcuter> excutersCache = new ConcurrentDictionary<string, ServiceExcuter>();
+        private IDictionary<string, RpcServiceInfo> rpcServiceTable;
+        private readonly IRpcServiceProvider rpcServiceProvider;
+        private IServiceProvider serviceProvider;
+        private static readonly object locker = new object();
+
+        public SimpleRpcServiceContainer(IRpcServiceProvider rpcServiceProvider, ILogger<SimpleRpcServiceContainer> logger)
         {
-            this._rpcServiceProvider = rpcServiceProvider;
-            BuildRpcService();
+            this.logger = logger;
+            this.rpcServiceProvider = rpcServiceProvider;
+            this.BuildRpcService();
         }
 
-        public void BuildRpcService()
+        private void BuildRpcService()
         {
-            this._rpcServiceTable = this._rpcServiceProvider.ScanRpcServices();
+            this.rpcServiceTable = this.rpcServiceProvider.ScanRpcServices();
             var serviceCollection = new ServiceCollection();
-            foreach (var rpcServiceInfo in this._rpcServiceTable.Values)
+            foreach (var rpcServiceInfo in this.rpcServiceTable.Values)
             {
                 if (rpcServiceInfo.IsImpl)
                 {
@@ -32,15 +40,27 @@ namespace Simp.Rpc.Service
 
         public ServiceExcuter LookupExecuter(string service, string method)
         {
-            RpcServiceInfo rpcService;
-            if (!this._rpcServiceTable.TryGetValue(service, out rpcService))
-                throw new Exception($"service: {service} not found");
+            ServiceExcuter excuter;
+            if (excutersCache.TryGetValue(service, out excuter))
+                return excuter;
 
-            RpcMethodInfo rpcMethodInfo;
-            if (!rpcService.Methods.TryGetValue(method, out rpcMethodInfo))
-                throw new Exception($"method: {method} not found");
+            lock (locker)
+            {
+                if (excutersCache.TryGetValue(service, out excuter))
+                    return excuter;
 
-            return new ServiceExcuter(serviceProvider.GetService(rpcService.ServiceType), rpcMethodInfo);
+                RpcServiceInfo rpcService;
+                if (!this.rpcServiceTable.TryGetValue(service, out rpcService))
+                    throw new Exception($"service: {service} not found");
+
+                RpcMethodInfo rpcMethodInfo;
+                if (!rpcService.Methods.TryGetValue(method, out rpcMethodInfo))
+                    throw new Exception($"method: {method} not found");
+
+                excuter = new ServiceExcuter(serviceProvider.GetService(rpcService.ServiceType), rpcMethodInfo);
+                excutersCache.TryAdd(service, excuter);
+                return excuter;
+            }
         }
 
         //public RpcServiceContainer BuildRpcServices(IDictionary<string, RpcServiceInfo> rpcServices)

@@ -37,10 +37,10 @@ namespace Simp.Rpc.Server
                 object[] args = null;
                 try
                 {
-                    var executer = this.server.rpcServiceContainer.LookupExecuter(message.ServiceName, message.MethodName);
+                    var executer = this.server.RpcServiceContainer.LookupExecuter(message.ServiceName, message.MethodName);
                     args = BuildExecuteArgs(message.Parameters, executer.ArgTypes);
-                    execRes = executer.Excute(args); 
-                    simpleResponseMessage.Success = true; 
+                    execRes = executer.Excute(args);
+                    simpleResponseMessage.Success = true;
                 }
                 catch (Exception e)
                 {
@@ -51,12 +51,12 @@ namespace Simp.Rpc.Server
 
                 simpleResponseMessage.Result = new SimpleParameter { Value = SimpleCodec.EnCode(execRes, out int typeCode), ValueType = typeCode };
                 string pre = $"threadId:{Thread.CurrentThread.ManagedThreadId}{context.Channel.Id.AsShortText()}";
-                Console.WriteLine($"{pre}, Received from client: ");
-                Console.WriteLine($"{pre}, service: {message.ServiceName}");
-                Console.WriteLine($"{pre}, method: {message.MethodName}");
-                Console.WriteLine($"{pre}, params:{JsonConvert.SerializeObject(args)}");
-                Console.WriteLine($"{pre}, Result: {JsonConvert.SerializeObject(execRes)}");
-
+                var log = $"{Environment.NewLine}{pre}, Received from client: ";
+                log += $"{Environment.NewLine}{pre}, service: {message.ServiceName}";
+                log += $"{Environment.NewLine}{pre}, method: {message.MethodName}";
+                log += $"{Environment.NewLine}{pre}, params:{JsonConvert.SerializeObject(args)}";
+                log += $"{Environment.NewLine}{pre}, Result: {JsonConvert.SerializeObject(execRes)}";
+                Console.WriteLine(log);
                 context.WriteAndFlushAsync(simpleResponseMessage);
             }
         }
@@ -96,6 +96,6 @@ namespace Simp.Rpc.Server
             }
             return args;
         }
-         
+
     }
 }

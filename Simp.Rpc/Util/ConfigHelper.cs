@@ -1,11 +1,10 @@
-﻿using DotNetty.Common.Internal.Logging;
+﻿using System;
+using DotNetty.Common.Internal.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Console;
 
-namespace Simp.Rpc
+namespace Simp.Rpc.Util
 {
-    using System; 
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging.Console;
-
     public static class ConfigHelper
     {
         static ConfigHelper()
@@ -27,6 +26,5 @@ namespace Simp.Rpc
 
         public static IConfigurationRoot Configuration { get; }
 
-        public static void SetConsoleLogger() => InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
     }
 }

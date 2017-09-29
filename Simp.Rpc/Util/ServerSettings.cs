@@ -1,7 +1,6 @@
 ﻿using System.Net;
-using Simp.Rpc;
 
-namespace Client
+namespace Simp.Rpc.Util
 {
     public static class ServerSettings
     {
