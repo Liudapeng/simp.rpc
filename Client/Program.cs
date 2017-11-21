@@ -128,7 +128,7 @@ namespace Client
 
     public class InvokeProxy<T> : DispatchProxy
     {
-        readonly SimpleInvokerFactory invokerFactory = new SimpleInvokerFactory();
+        readonly static SimpleInvokerFactory invokerFactory = new SimpleInvokerFactory();
         private readonly Type type;
 
         public InvokeProxy()

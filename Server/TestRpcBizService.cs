@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Simp.Rpc.Service.Attributes;
 using TestServiceContract;
 
@@ -6,6 +7,7 @@ namespace Server
 {
     public class TestRpcBizService : ITestRpcService
     {
+
         public TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2, int i)
         {
             return new TestServiceResponse

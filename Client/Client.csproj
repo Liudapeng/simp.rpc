@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NetCoreStack.DispatchProxyAsync" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Simp.Rpc\Simp.Rpc.csproj" />
     <ProjectReference Include="..\TestServiceContract\TestServiceContract.csproj" />
   </ItemGroup>

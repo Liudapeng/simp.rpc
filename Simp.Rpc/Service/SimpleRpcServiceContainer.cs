@@ -40,12 +40,13 @@ namespace Simp.Rpc.Service
         public ServiceExcuter LookupExecuter(string service, string method)
         {
             ServiceExcuter excuter;
-            if (excutersCache.TryGetValue(service, out excuter))
+            string excuterKey = String.Format($"{service}.{method}");
+            if (excutersCache.TryGetValue(excuterKey, out excuter))
                 return excuter;
 
             lock (locker)
             {
-                if (excutersCache.TryGetValue(service, out excuter))
+                if (excutersCache.TryGetValue(excuterKey, out excuter))
                     return excuter;
 
                 RpcServiceInfo rpcService;
@@ -57,7 +58,7 @@ namespace Simp.Rpc.Service
                     throw new Exception($"method: {method} not found");
 
                 excuter = new ServiceExcuter(serviceProvider.GetService(rpcService.ServiceType), rpcMethodInfo);
-                excutersCache.TryAdd(service, excuter);
+                excutersCache.TryAdd(excuterKey, excuter);
                 return excuter;
             }
         }
