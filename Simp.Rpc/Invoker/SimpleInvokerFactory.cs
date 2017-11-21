@@ -14,6 +14,12 @@ namespace Simp.Rpc.Invoker
         private readonly IAddressProvider addressProvider = new PollingAddressProvider();
         readonly object locker = new object();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverName">服务名</param>
+        /// <param name="group">分组</param>
+        /// <returns></returns>
         public async Task<Invoker<SimpleResponseMessage>> CreateInvokerAsync(string serverName, string @group = "")
         {
             var server = await serverRouteManager.GetServerRouteAsync(serverName, @group);

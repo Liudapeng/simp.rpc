@@ -3,37 +3,34 @@ using System.Net;
 using System.Threading.Tasks;
 using Common;
 using DotNetty.Common.Internal.Logging;
-using Simp.Rpc.Client;
 using Simp.Rpc.Codec;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Microsoft.Extensions.Logging;
-using Simp.Rpc.Service;
-using Simp.Rpc.Util;
+using Simp.Rpc.Service; 
 
 namespace Simp.Rpc.Server
 {
     public class SimpleServer : IServer
-    {
-        private readonly ILogger<SimpleServer> logger;
+    { 
+        public ILogger<SimpleServer> Logger { get; set; } 
 
         public IRpcServiceContainer RpcServiceContainer { get; }
         private readonly ServerOptions serverOptions;
         private IChannel boundChannel;
 
-        public SimpleServer(IRpcServiceContainer rpcServiceContainer, IServerOptionProvider serverOptionProvider, ILogger<SimpleServer> logger)
-        {
-            this.logger = logger;
+        public SimpleServer(IRpcServiceContainer rpcServiceContainer, IServerOptionProvider serverOptionProvider)
+        { 
             this.serverOptions = serverOptionProvider.GetOption();
-            this.RpcServiceContainer = rpcServiceContainer;
+            this.RpcServiceContainer = rpcServiceContainer; 
         }
 
         public async Task StartAsync()
         {
             await RunServerAsync(this.serverOptions.EndPoint);
         }
-
+          
         async Task RunServerAsync(EndPoint endPoint)
         { 
             ISerializer serializer = new ProtoBufSerializer();
@@ -54,7 +51,7 @@ namespace Simp.Rpc.Server
                 }));
 
             boundChannel = await bootstrap.BindAsync(endPoint);
-            logger.LogInformation($"server start by netty with {boundChannel.LocalAddress}, channelId:{boundChannel.Id}");
+            Logger?.LogInformation($"server start by netty with {boundChannel.LocalAddress}, channelId:{boundChannel.Id}");
         }
 
     }

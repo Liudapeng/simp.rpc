@@ -9,7 +9,7 @@ namespace Simp.Rpc.Service
 {
     public class SimpleRpcServiceContainer : IRpcServiceContainer
     {
-        private readonly ILogger<SimpleRpcServiceContainer> logger;
+        public ILogger<SimpleRpcServiceContainer> Logger { get; set; }
 
         private readonly IDictionary<string, ServiceExcuter> excutersCache = new ConcurrentDictionary<string, ServiceExcuter>();
         private IDictionary<string, RpcServiceInfo> rpcServiceTable;
@@ -17,9 +17,8 @@ namespace Simp.Rpc.Service
         private IServiceProvider serviceProvider;
         private static readonly object locker = new object();
 
-        public SimpleRpcServiceContainer(IRpcServiceProvider rpcServiceProvider, ILogger<SimpleRpcServiceContainer> logger)
+        public SimpleRpcServiceContainer(IRpcServiceProvider rpcServiceProvider)
         {
-            this.logger = logger;
             this.rpcServiceProvider = rpcServiceProvider;
             this.BuildRpcService();
         }

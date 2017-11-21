@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using Autofac;
+using Autofac.Builder;
+using Autofac.Core;
+using Autofac.Extensions.DependencyInjection;
 using DotNetty.Common.Internal.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,6 +22,8 @@ namespace Server
 
     class Program
     {
+        private static readonly Func<string, LogLevel, bool> filter = (string category, LogLevel level) => true;
+
         private static readonly Assembly[] assembly =
         {
             Assembly.Load("TestServiceContract"),//服务
@@ -29,26 +35,42 @@ namespace Server
         {
             Assembly.Load("TestServiceContract");//服务
 
-            ServiceCollection serviceCollection = new ServiceCollection();
-            IServiceProvider serviceProvider = serviceCollection
-                .AddLogging()
-                .AddSingleton<IServer, SimpleServer>()
-                .AddSingleton<IRpcServiceProvider, AttributeRpcServiceProvider>()
-                .AddSingleton<IRpcServiceContainer, SimpleRpcServiceContainer>()
-                .AddSingleton<IServerOptionProvider, SimpleServerOptionProvider>()
-                .BuildServiceProvider();
-             
-            Task.Run(async () =>
+            ContainerBuilder builder = new ContainerBuilder();
+            builder.Populate(new ServiceCollection());
+            builder.RegisterType<LoggerFactory>().As<ILoggerFactory>().SingleInstance()
+                .OnActivating(delegate (IActivatingEventArgs<LoggerFactory> a)
+                { 
+                    a.Instance.AddConsole(filter, true);
+                });
+            builder.RegisterGeneric(typeof(Logger<>)).As(typeof(ILogger<>));
+            builder.RegisterType<SimpleServerOptionProvider>().As<IServerOptionProvider>();
+            builder.RegisterType<AttributeRpcServiceProvider>().As<IRpcServiceProvider>().PropertiesAutowired().WithParameter(new TypedParameter(typeof(Assembly[]), assembly));
+            builder.RegisterType<SimpleRpcServiceContainer>().As<IRpcServiceContainer>().PropertiesAutowired();
+            builder.RegisterType<SimpleServer>().As<IServer>().PropertiesAutowired()
+                .OnActivating(delegate
+                { 
+                    InternalLoggerFactory.DefaultFactory.AddConsole(filter, true);
+                });
+
+            AutofacServiceProvider serviceProvider = new AutofacServiceProvider(builder.Build());
+
+            Task task = Task.Run(async delegate
             {
-                serviceProvider.GetRequiredService<ILoggerFactory>().AddConsole((s, level) => true, true);
-
-                InternalLoggerFactory.DefaultFactory.AddConsole((s, level) => true, true);
-
-                await serviceProvider.GetRequiredService<IServer>().StartAsync(); 
-
+                await serviceProvider.GetRequiredService<IServer>().StartAsync();
                 serviceProvider.GetRequiredService<ILoggerFactory>()
                     .CreateLogger("Main")
-                    .LogInformation($"服务端启动成功，{DateTime.Now}。");
+                    .LogInformation(string.Format("服务端启动成功，{0}。", DateTime.Now));
+            });
+            task.ContinueWith(delegate (Task t)
+            {
+                if (t.IsFaulted)
+                {
+                    Console.WriteLine(t.Exception.GetBaseException());
+                }
+                else
+                {
+                    Console.WriteLine(t.Status);
+                }
             });
             Console.ReadLine();
         }

@@ -6,7 +6,7 @@ namespace Simp.Rpc.Invoker
 {
     public interface Invoker<TResponse>
     {
-        Task<TResponse> InvokeAsync(string service, string method, List<object> args);
+        Task<TResponse> InvokeAsync(string service, string method, params object[] arg);
 
         Task<TResponse> GetResponse(IChannelHandlerContext contex, TResponse msg);
     }

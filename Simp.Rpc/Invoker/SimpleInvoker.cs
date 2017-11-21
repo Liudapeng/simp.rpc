@@ -57,7 +57,7 @@ namespace Simp.Rpc.Invoker
                 );
         }
 
-        private SimpleRequestMessage CreateRequestMessage(string service, string method, List<object> args)
+        private SimpleRequestMessage CreateRequestMessage(string service, string method, params object[] args)
         {
             SimpleRequestMessage requestMessage = new SimpleRequestMessage
             {
@@ -78,7 +78,7 @@ namespace Simp.Rpc.Invoker
             return requestMessage;
         }
 
-        public async Task<SimpleResponseMessage> InvokeAsync(string service, string method, List<object> args)
+        public async Task<SimpleResponseMessage> InvokeAsync(string service, string method, params object[] args)
         {
             AddressBase address = await this.addressProvider.AcquireAsync(this.server.AddressList);
             if (address == null)

@@ -54,7 +54,7 @@ namespace Simp.Rpc.Server
                 }
 
                 simpleResponseMessage.Result = new SimpleParameter { Value = SimpleCodec.EnCode(execRes, out int typeCode), ValueType = typeCode };
-                string pre = $"threadId:{Thread.CurrentThread.ManagedThreadId}{context.Channel.Id.AsShortText()}";
+                string pre = $"threadId:{Thread.CurrentThread.ManagedThreadId}-{context.Channel.Id.AsShortText()}";
                 var log = $"{pre}, Received from client: ";
                 log += $"{Environment.NewLine}{pre}, service: {message.ServiceName}";
                 log += $"{Environment.NewLine}{pre}, method: {message.MethodName}";
@@ -79,7 +79,7 @@ namespace Simp.Rpc.Server
         }
 
         /// <summary>
-        /// 
+        /// 根据本地参数类型解码请求参数
         /// </summary>
         /// <param name="encodeParameters"></param>
         /// <param name="decodeTypes"></param>

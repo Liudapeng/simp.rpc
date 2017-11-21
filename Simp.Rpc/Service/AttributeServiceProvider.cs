@@ -11,18 +11,17 @@ namespace Simp.Rpc.Service
 {
     public class AttributeRpcServiceProvider : IRpcServiceProvider
     {
-        private readonly ILogger<AttributeRpcServiceProvider> _logger;
+        public ILogger<AttributeRpcServiceProvider> Logger { get; set; }
 
         private Type[] _types;
 
-        public AttributeRpcServiceProvider(ILogger<AttributeRpcServiceProvider> logger)
-            : this(AppDomain.CurrentDomain.GetAssemblies(), logger)
+        public AttributeRpcServiceProvider()
+            : this(AppDomain.CurrentDomain.GetAssemblies())
         {
         }
 
-        public AttributeRpcServiceProvider(Assembly[] assemblies, ILogger<AttributeRpcServiceProvider> logger)
+        public AttributeRpcServiceProvider(Assembly[] assemblies)
         {
-            _logger = logger;
             InitByAssemblies(assemblies);
         }
 
@@ -43,13 +42,20 @@ namespace Simp.Rpc.Service
         /// <returns></returns>
         public IDictionary<string, RpcServiceInfo> ScanRpcServices()
         {
+            IDictionary<string, RpcServiceInfo> serviceInfos = new Dictionary<string, RpcServiceInfo>();
             //查找服务 
             var services = _types.Where(i => i.IsInterface && i.GetCustomAttribute<RpcServiceContractAttribute>() != null).ToList();
-            _logger.LogInformation($"服务列表：{Environment.NewLine}{string.Join(Environment.NewLine, services.Select(i => (!string.IsNullOrEmpty(i.GetCustomAttribute<RpcServiceContractAttribute>().Name) ? i.GetCustomAttribute<RpcServiceContractAttribute>().Name : i.Name) + " " + i.GetCustomAttribute<RpcServiceContractAttribute>().Description))}");
-            
+            if (!services.Any())
+            {
+                Logger?.LogInformation("not found any service.");
+                return serviceInfos;
+            }
+
+            Logger?.LogInformation($"found services：{Environment.NewLine}{string.Join(Environment.NewLine, services.Select(i => (!string.IsNullOrEmpty(i.GetCustomAttribute<RpcServiceContractAttribute>().Name) ? i.GetCustomAttribute<RpcServiceContractAttribute>().Name : i.Name) + " " + i.GetCustomAttribute<RpcServiceContractAttribute>().Description))}");
+
             //查找服务实现
             var serviceImpls = _types.Where(i => services.Any(service => i.IsClass && service.IsAssignableFrom(i))).ToList();
-            IDictionary<string, RpcServiceInfo> serviceInfos = new Dictionary<string, RpcServiceInfo>();
+
             foreach (var service in services)
             {
                 //别名
@@ -73,7 +79,7 @@ namespace Simp.Rpc.Service
                 {
                     if (methodInfo.GetCustomAttribute<RpcServiceIgnoreAttribute>() != null)
                         continue;
-                    _logger.LogDebug($"methodInfo：{methodInfo.Name}"); 
+                    Logger?.LogDebug($"methodInfo：{serviceName}.{methodInfo.Name}");
 
                     var rpcMethodAttr = methodInfo.GetCustomAttribute<RpcServiceContractAttribute>();
                     var methodName = string.IsNullOrEmpty(rpcMethodAttr?.Name) ? methodInfo.Name : rpcMethodAttr.Name;
