@@ -57,6 +57,11 @@ namespace Simp.Rpc.Client
 
         public string State => $"GroupPool count:{this.EndPointGroupPools.Count}, pool size:{this.EndPointGroupPools.Values.Sum(v => v.Count(m => m.Value != null))}, GroupQueue count:{this.EndPointGroupQueues.Count}, idle size:{this.EndPointGroupQueues.Values.Sum(v => v.Count)}";
 
+        /// <summary>
+        /// 从链接池获取一个链接
+        /// </summary>
+        /// <param name="endPointProvider"></param>
+        /// <returns></returns>
         public async Task<IChannel> AcquireAsync(Func<EndPoint> endPointProvider)
         {
             var endPoint = endPointProvider();

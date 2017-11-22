@@ -31,8 +31,8 @@ namespace Server
         };
          
 
-        static void Main()
-        {
+        static void Main(string[] args)
+        {  
             Assembly.Load("TestServiceContract");//服务
 
             ContainerBuilder builder = new ContainerBuilder();

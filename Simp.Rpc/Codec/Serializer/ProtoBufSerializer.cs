@@ -2,15 +2,15 @@
 using System.IO;
 using ProtoBuf;
 
-namespace Simp.Rpc.Codec
+namespace Simp.Rpc.Codec.Serializer
 {
-    public class ProtoBufSerializer: ISerializer
+    public class ProtoBufSerializer : ISerializer
     {
         public byte[] Serialize(object instance)
         {
             using (var stream = new MemoryStream())
             {
-                Serializer.Serialize(stream, instance);
+                ProtoBuf.Serializer.Serialize(stream, instance);
                 return stream.ToArray();
             }
         }
@@ -22,7 +22,7 @@ namespace Simp.Rpc.Codec
 
             using (var stream = new MemoryStream(data))
             {
-                return Serializer.Deserialize<T>(stream);
+                return ProtoBuf.Serializer.Deserialize<T>(stream);
             }
         }
 
@@ -34,7 +34,7 @@ namespace Simp.Rpc.Codec
 
             using (var stream = new MemoryStream(data))
             {
-                return Serializer.Deserialize(objType, stream);
+                return ProtoBuf.Serializer.Deserialize(objType, stream);
             }
         }
 

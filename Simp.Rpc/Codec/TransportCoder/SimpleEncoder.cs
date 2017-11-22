@@ -1,15 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿using System.Text;
+using DotNetty.Buffers;
+using DotNetty.Codecs;
+using DotNetty.Transport.Channels;
+using Simp.Rpc.Codec.Serializer;
 
-using Simp.Rpc.Codec;
-
-namespace Common
-{ 
-    using System.Text;
-    using DotNetty.Buffers;
-    using DotNetty.Codecs;
-    using DotNetty.Transport.Channels; 
-
+namespace Simp.Rpc.Codec.TransportCoder
+{
     public class SimpleEncoder<T> : MessageToByteEncoder<T>
     {
         readonly byte[] HeaderBytes;

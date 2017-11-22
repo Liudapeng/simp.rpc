@@ -1,17 +1,13 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using DotNetty.Buffers;
+using DotNetty.Codecs;
+using DotNetty.Transport.Channels;
+using Simp.Rpc.Codec.Serializer;
 
-using Simp.Rpc.Codec;
-
-namespace Common
+namespace Simp.Rpc.Codec.TransportCoder
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-    using DotNetty.Buffers;
-    using DotNetty.Codecs;
-    using DotNetty.Transport.Channels;
-
     public class SimpleDecoder<T> : ReplayingDecoder<SimpleDecoder<T>.DecodeState>
     {
         public enum DecodeState

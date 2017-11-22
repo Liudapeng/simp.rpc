@@ -1,1 +1,1 @@
-dotnet Server.dll
+dotnet Server.dll -c

@@ -23,7 +23,7 @@ namespace Simp.Rpc.Route
         {
             AddRouteAsync(new ServerDescription
             {
-                Name = "Server1",
+                Name = "TestServer",
                 Balance = "polling",
                 AddressList = new List<AddressBase>(new List<AddressBase>
                 {

@@ -4,15 +4,19 @@ using System.Collections.Generic;
 using System.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
-using Common;
 using Simp.Rpc.Codec; 
 using Simp.Rpc.Route;
 using DotNetty.Transport.Channels;
 using Simp.Rpc.Address;
 using Simp.Rpc.Client;
+using Simp.Rpc.Codec.Serializer;
+using Simp.Rpc.Codec.TransportCoder;
 
 namespace Simp.Rpc.Invoker
 {
+    /// <summary>
+    /// 一个默认的远程调用实现
+    /// </summary>
     public class SimpleInvoker : Invoker<SimpleResponseMessage>
     {
         private readonly ConcurrentDictionary<string, TaskCompletionSource<SimpleResponseMessage>> invokeResult = new ConcurrentDictionary<string, TaskCompletionSource<SimpleResponseMessage>>();
@@ -27,6 +31,7 @@ namespace Simp.Rpc.Invoker
         private readonly IServerRouteManager serverRouteManager;
         private readonly IAddressProvider addressProvider;
         private readonly ISerializer serializer = new ProtoBufSerializer();
+        private readonly ITypeCodec<SimpleParameter> typeCodec = new SimpleTypeCodec(new ProtoBufSerializer());
 
         static SimpleInvoker()
         {
@@ -40,12 +45,12 @@ namespace Simp.Rpc.Invoker
             this.serverName = serverName;
             this.group = group;
 
-            Task.Run(async () => { await InitChannel(); }).Wait();
+            this.InitChannel(); 
         }
 
-        private async Task InitChannel()
+        private  void InitChannel()
         {
-            server = await this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group);
+            Task.Run(async () => { server = await this.serverRouteManager.GetServerRouteAsync(this.serverName, this.group); }).Wait();
             currentClientChannelPool = new ClientChannelPool(
                     () => new IChannelHandler[]
                     {
@@ -57,7 +62,14 @@ namespace Simp.Rpc.Invoker
                 );
         }
 
-        private SimpleRequestMessage CreateRequestMessage(string service, string method, params object[] args)
+        /// <summary>
+        /// 构建请求消息模型
+        /// </summary>
+        /// <param name="service"></param>
+        /// <param name="method"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private SimpleRequestMessage BuildRequestMessage(string service, string method, params object[] args)
         {
             SimpleRequestMessage requestMessage = new SimpleRequestMessage
             {
@@ -71,7 +83,7 @@ namespace Simp.Rpc.Invoker
             {
                 requestMessage.Parameters = args.Select(arg =>
                 {
-                    var simpleParameter = new SimpleParameter { Value = SimpleCodec.EnCode(arg, out int codeType), ValueType = codeType };
+                    var simpleParameter = new SimpleParameter { Value = typeCodec.EnCode(arg, out int codeType), ValueType = codeType };
                     return simpleParameter;
                 }).ToArray();
             }
@@ -86,7 +98,7 @@ namespace Simp.Rpc.Invoker
 
             Task<IChannel> clientChannelTask = currentClientChannelPool.AcquireAsync(address.CreateEndPoint);
 
-            var requestMessage = CreateRequestMessage(service, method, args);
+            var requestMessage = BuildRequestMessage(service, method, args);
 
             IChannel clientChannel = await clientChannelTask;
             requestMessage.ContextID = clientChannel.Id.AsShortText();
@@ -120,8 +132,7 @@ namespace Simp.Rpc.Invoker
             invokeResult.TryRemove(requestMessage.MessageID, out TaskCompletionSource<SimpleResponseMessage> _);
             return result;
         }
-
-
+         
         public Task<SimpleResponseMessage> GetResponse(IChannelHandlerContext contex, SimpleResponseMessage msg)
         {
             TaskCompletionSource<SimpleResponseMessage> tcs;

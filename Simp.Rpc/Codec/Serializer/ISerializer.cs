@@ -1,7 +1,10 @@
 ﻿using System;
 
-namespace Simp.Rpc.Codec
+namespace Simp.Rpc.Codec.Serializer
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public interface ISerializer
     { 
         byte[] Serialize(object instance);

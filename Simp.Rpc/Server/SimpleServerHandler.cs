@@ -3,6 +3,7 @@ using System.Linq;
 using DotNetty.Common.Internal.Logging;
 using Microsoft.Extensions.Logging;
 using Simp.Rpc.Codec;
+using Simp.Rpc.Codec.Serializer;
 using Simp.Rpc.Service;
 
 namespace Simp.Rpc.Server
@@ -13,13 +14,14 @@ namespace Simp.Rpc.Server
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
-    using Common;
     using Newtonsoft.Json;
 
     public class SimpleServerHandler : SimpleChannelInboundHandler<SimpleRequestMessage>
     {
         private readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<SimpleServerHandler>();
+
         private readonly SimpleServer server;
+        private readonly ITypeCodec<SimpleParameter> typeCodec = new SimpleTypeCodec(new ProtoBufSerializer());
 
         public SimpleServerHandler(IServer server)
         {
@@ -42,7 +44,7 @@ namespace Simp.Rpc.Server
                 try
                 {
                     var executer = this.server.RpcServiceContainer.LookupExecuter(message.ServiceName, message.MethodName);
-                    args = BuildExecuteArgs(message.Parameters, executer.ArgTypes);
+                    args = typeCodec.Decode(message.Parameters, executer.ArgTypes);
                     execRes = executer.Excute(args);
                     simpleResponseMessage.Success = true;
                 }
@@ -53,13 +55,16 @@ namespace Simp.Rpc.Server
                     simpleResponseMessage.ErrorDetail = e.StackTrace;
                 }
 
-                simpleResponseMessage.Result = new SimpleParameter { Value = SimpleCodec.EnCode(execRes, out int typeCode), ValueType = typeCode };
+                simpleResponseMessage.Result = new SimpleParameter { Value = typeCodec.EnCode(execRes, out int typeCode), ValueType = typeCode };
                 string pre = $"threadId:{Thread.CurrentThread.ManagedThreadId}-{context.Channel.Id.AsShortText()}";
                 var log = $"{pre}, Received from client: ";
                 log += $"{Environment.NewLine}{pre}, service: {message.ServiceName}";
                 log += $"{Environment.NewLine}{pre}, method: {message.MethodName}";
                 log += $"{Environment.NewLine}{pre}, params:{JsonConvert.SerializeObject(args)}";
-                log += $"{Environment.NewLine}{pre}, Result: {JsonConvert.SerializeObject(execRes)}{Environment.NewLine}";
+                log += $"{Environment.NewLine}{pre}, Result: {JsonConvert.SerializeObject(execRes)}";
+                log += $"{Environment.NewLine}{pre}, Success: {JsonConvert.SerializeObject(simpleResponseMessage.Success)}";
+                log += $"{Environment.NewLine}{pre}, ErrorInfo: {JsonConvert.SerializeObject(simpleResponseMessage.ErrorInfo)}";
+                log += $"{Environment.NewLine}{pre}, ErrorDetail: {JsonConvert.SerializeObject(simpleResponseMessage.ErrorDetail)}{Environment.NewLine}";
                 Logger.Debug(log);
                 context.WriteAndFlushAsync(simpleResponseMessage);
             }
@@ -77,29 +82,6 @@ namespace Simp.Rpc.Server
             Logger.Error("closed exception: " + context.Channel.RemoteAddress);
             context.CloseAsync();
         }
-
-        /// <summary>
-        /// 根据本地参数类型解码请求参数
-        /// </summary>
-        /// <param name="encodeParameters"></param>
-        /// <param name="decodeTypes"></param>
-        /// <returns></returns>
-        private object[] BuildExecuteArgs(SimpleParameter[] encodeParameters, Type[] decodeTypes)
-        {
-            object[] args = { };
-            if (encodeParameters != null && encodeParameters.Any())
-            {
-                if (encodeParameters.Length != decodeTypes.Length)
-                    throw new Exception("参数个数不匹配");
-
-                args = new object[encodeParameters.Length];
-                for (int i = 0; i < encodeParameters.Length; i++)
-                {
-                    args[i] = SimpleCodec.DeCode(encodeParameters[i].Value, encodeParameters[i].ValueType, decodeTypes[i]);
-                }
-            }
-            return args;
-        }
-
+ 
     }
 }

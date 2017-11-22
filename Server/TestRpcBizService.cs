@@ -7,6 +7,21 @@ namespace Server
 {
     public class TestRpcBizService : ITestRpcService
     {
+        public List<TestServiceResponse> ExecuteServiceList(List<TestServiceRequest> requests)
+        {
+            var response = new List<TestServiceResponse>();
+
+            foreach (var request in requests)
+            {
+                response.Add(new TestServiceResponse
+                {
+                    FloatValue = request.FloatValue,
+                    IntValue = request.IntValue ,
+                    StringValue = request.StringValue 
+                });
+            }
+            return response; 
+        }
 
         public TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2, int i)
         {

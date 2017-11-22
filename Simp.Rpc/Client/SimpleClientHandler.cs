@@ -8,7 +8,6 @@ namespace Simp.Rpc.Client
     using System.Text;
     using DotNetty.Buffers; 
     using DotNetty.Transport.Channels;
-    using Common;
 
     public class SimpleClientHandler : SimpleChannelInboundHandler<SimpleResponseMessage>
     {

@@ -7,6 +7,8 @@ namespace Simp.Rpc.Service.Attributes
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class RpcServiceContractAttribute : Attribute
     {
+        public string Server { get; set; }
+
         public string Name { get; set; }
 
         public string Description { get; set; }
@@ -15,8 +17,9 @@ namespace Simp.Rpc.Service.Attributes
         {
         }
 
-        public RpcServiceContractAttribute(string name, string description = "")
+        public RpcServiceContractAttribute(string server, string name, string description = "")
         {
+            Server = server;
             Name = name;
             Description = description;
         }

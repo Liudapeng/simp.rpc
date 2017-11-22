@@ -4,14 +4,13 @@ using Simp.Rpc.Service.Attributes;
 
 namespace TestServiceContract
 {
-    [RpcServiceContract(name: "TestRpcService", Description = "测试服务")]
+    [RpcServiceContract(server: "TestServer", name: "TestRpcService", Description = "测试服务")]
     public interface ITestRpcService
     {
         [RpcServiceContract]
         int GetServiceCount();
-
-        //[RpcServiceContract]
-        //Task<int> GetServiceCountAsync();
+         
+        List<TestServiceResponse> ExecuteServiceList(List<TestServiceRequest> requests);
 
         TestServiceResponse ExecuteService(TestServiceRequest request, TestServiceRequest2 request2, int i);
 
@@ -19,6 +18,6 @@ namespace TestServiceContract
 
         [RpcServiceIgnore]
         int TestIgnore();
-         
+
     }
 }
