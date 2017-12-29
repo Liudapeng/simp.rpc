@@ -9,20 +9,16 @@ namespace Simp.Rpc.Util
     {
         static ConfigHelper()
         {
+            string environmentVariable = Environment.GetEnvironmentVariable("MTIME_PROFILES_ACTIVE");
+
             Configuration = new ConfigurationBuilder()
                 .SetBasePath(ProcessDirectory)
                 .AddJsonFile("appsettings.json")
+                .AddJsonFile($"app.{environmentVariable}.json")
                 .Build();
         }
 
-        public static string ProcessDirectory
-        {
-            get
-            {
-  
-                return AppDomain.CurrentDomain.BaseDirectory; 
-            }
-        }
+        private static string ProcessDirectory => AppDomain.CurrentDomain.BaseDirectory;
 
         public static IConfigurationRoot Configuration { get; }
 

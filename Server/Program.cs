@@ -43,9 +43,13 @@ namespace Server
                     a.Instance.AddConsole(filter, true);
                 });
             builder.RegisterGeneric(typeof(Logger<>)).As(typeof(ILogger<>));
+            //服务配置项
             builder.RegisterType<SimpleServerOptionProvider>().As<IServerOptionProvider>();
+            //服务扫描器
             builder.RegisterType<AttributeRpcServiceProvider>().As<IRpcServiceProvider>().PropertiesAutowired().WithParameter(new TypedParameter(typeof(Assembly[]), assembly));
+            //服务容器
             builder.RegisterType<SimpleRpcServiceContainer>().As<IRpcServiceContainer>().PropertiesAutowired();
+            //server
             builder.RegisterType<SimpleServer>().As<IServer>().PropertiesAutowired()
                 .OnActivating(delegate
                 { 
